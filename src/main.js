@@ -1,15 +1,53 @@
 
 const clientId = "dc5089b30ca2410098d69f1b41b65a14";
 let searchParams = new URLSearchParams(window.location.search); 
-const code = searchParams.get('code');
+let code = searchParams.get('code');
+let userId = 0;
 
 if (!code) {
-    redirectToAuthCodeFlow(clientId);
+    document.getElementById('login-btn').onclick = function () {  
+      redirectToAuthCodeFlow(clientId);
+    };
 } else {
+    document.getElementById('login-btn').setAttribute("hidden", "true");
+    document.getElementById("profile").setAttribute("hidden", "true");
     const accessToken = await getAccessToken(clientId, code);
     const profile = await fetchProfile(accessToken);
+    userId = profile.id;
     populateUI(profile);
+    document.getElementById('playlists-btn').onclick = async function () {
+      await getPlaylists(accessToken);
+    };
 }
+
+async function getPlaylists(accessToken) {
+    const result = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
+       method: "GET",
+       headers: { Authorization: `Bearer ${accessToken}` }
+    });
+  
+    const playlists = await result.json();
+
+    playlists.items.forEach((playlist) => {
+      let playlistDiv = document.createElement('div');
+      playlistDiv.id = playlist.id;
+      let name = playlistDiv.appendChild(document.createElement("p"));
+      name.innerText = playlist.name;
+
+      const playlistsImg = playlist.images[1];
+      let imgElement = playlistDiv.appendChild(document.createElement("img"));
+      imgElement.src = playlistsImg.url;
+      imgElement.width = playlistsImg.width;
+      imgElement.height = playlistsImg.height;
+
+
+      let tracksNumber = playlistDiv.appendChild(document.createElement("p"));
+      tracksNumber.innerText = playlist.tracks.total;
+
+
+      document.body.appendChild(playlistDiv);
+   });
+  }
 
 export async function getAccessToken(clientId, code) {
   const verifier = localStorage.getItem("verifier");
@@ -41,9 +79,6 @@ async function fetchProfile(token) {
 function populateUI(profile) {
   document.getElementById("displayName").innerText = profile.display_name;
   if (profile.images[0]) {
-      const profileImage = new Image(200, 200);
-      profileImage.src = profile.images[0].url;
-      document.getElementById("avatar").appendChild(profileImage);
       document.getElementById("avatar").src = profile.images[0].url;
   }
   document.getElementById("id").innerText = profile.id;
@@ -52,6 +87,10 @@ function populateUI(profile) {
   document.getElementById("uri").setAttribute("href", profile.external_urls.spotify);
   document.getElementById("url").innerText = profile.href;
   document.getElementById("url").setAttribute("href", profile.href);
+
+  setTimeout(function() {
+    document.getElementById("profile").removeAttribute("hidden");
+  }, 100);
 }
 export async function redirectToAuthCodeFlow(clientId) {
   const verifier = generateCodeVerifier(128);
@@ -88,4 +127,3 @@ async function generateCodeChallenge(codeVerifier) {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
 }
-
