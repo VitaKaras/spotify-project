@@ -1,53 +1,37 @@
-
 const clientId = "dc5089b30ca2410098d69f1b41b65a14";
-let searchParams = new URLSearchParams(window.location.search); 
-let code = searchParams.get('code');
-let userId = 0;
+const searchParams = new URLSearchParams(window.location.search);
+const code = searchParams.get("code");
+const profile = JSON.parse(localStorage.getItem("profile"));
 
-if (!code) {
-    document.getElementById('login-btn').onclick = function () {  
-      redirectToAuthCodeFlow(clientId);
-    };
+if (!code && !profile) {
+  document.getElementById("login-btn").style.display = "block";
+  document.getElementById("logout-btn").style.display = "none";
+  document.getElementById("header").style.display = "none";
+
+  document.getElementById("login-btn").onclick = function () {
+    redirectToAuthCodeFlow(clientId);
+  };
 } else {
-    document.getElementById('login-btn').setAttribute("hidden", "true");
-    document.getElementById("profile").setAttribute("hidden", "true");
-    const accessToken = await getAccessToken(clientId, code);
-    const profile = await fetchProfile(accessToken);
-    userId = profile.id;
+  document.getElementById("start-header").style.display = "none";
+
+  if (profile) {
     populateUI(profile);
-    document.getElementById('playlists-btn').onclick = async function () {
-      await getPlaylists(accessToken);
-    };
-}
-
-async function getPlaylists(accessToken) {
-    const result = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
-       method: "GET",
-       headers: { Authorization: `Bearer ${accessToken}` }
+  } else {
+    getAccessToken(clientId, code).then((accessToken) => {
+      localStorage.setItem("accessToken", accessToken);
+      fetchProfile(accessToken).then((profile) => {
+        localStorage.setItem("profile", JSON.stringify(profile));
+        localStorage.setItem("userId", profile.id);
+        populateUI(profile);
+      });
     });
-  
-    const playlists = await result.json();
-
-    playlists.items.forEach((playlist) => {
-      let playlistDiv = document.createElement('div');
-      playlistDiv.id = playlist.id;
-      let name = playlistDiv.appendChild(document.createElement("p"));
-      name.innerText = playlist.name;
-
-      const playlistsImg = playlist.images[1];
-      let imgElement = playlistDiv.appendChild(document.createElement("img"));
-      imgElement.src = playlistsImg.url;
-      imgElement.width = playlistsImg.width;
-      imgElement.height = playlistsImg.height;
-
-
-      let tracksNumber = playlistDiv.appendChild(document.createElement("p"));
-      tracksNumber.innerText = playlist.tracks.total;
-
-
-      document.body.appendChild(playlistDiv);
-   });
   }
+
+  document.getElementById("logout-btn").onclick = function () {
+    localStorage.clear();
+    window.location.href = "index.html";
+  };
+}
 
 export async function getAccessToken(clientId, code) {
   const verifier = localStorage.getItem("verifier");
@@ -60,9 +44,9 @@ export async function getAccessToken(clientId, code) {
   params.append("code_verifier", verifier);
 
   const result = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: params
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params,
   });
 
   const { access_token } = await result.json();
@@ -70,7 +54,8 @@ export async function getAccessToken(clientId, code) {
 }
 async function fetchProfile(token) {
   const result = await fetch("https://api.spotify.com/v1/me", {
-      method: "GET", headers: { Authorization: `Bearer ${token}` }
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   return await result.json();
@@ -79,17 +64,20 @@ async function fetchProfile(token) {
 function populateUI(profile) {
   document.getElementById("displayName").innerText = profile.display_name;
   if (profile.images[0]) {
-      document.getElementById("avatar").src = profile.images[0].url;
+    document.getElementById("avatar").src = profile.images[0].url;
   }
   document.getElementById("id").innerText = profile.id;
+  document.getElementById("country").innerText = profile.country;
   document.getElementById("email").innerText = profile.email;
   document.getElementById("uri").innerText = profile.uri;
-  document.getElementById("uri").setAttribute("href", profile.external_urls.spotify);
-  document.getElementById("url").innerText = profile.href;
-  document.getElementById("url").setAttribute("href", profile.href);
+  document
+    .getElementById("uri")
+    .setAttribute("href", profile.external_urls.spotify);
 
-  setTimeout(function() {
+  setTimeout(function () {
     document.getElementById("profile").removeAttribute("hidden");
+    document.getElementById("logout-btn").style.display = "block";
+    document.getElementById("playlists-btn").style.display = "block";
   }, 100);
 }
 export async function redirectToAuthCodeFlow(clientId) {
@@ -110,20 +98,21 @@ export async function redirectToAuthCodeFlow(clientId) {
 }
 
 function generateCodeVerifier(length) {
-  let text = '';
-  let possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let text = "";
+  let possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
   for (let i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
   return text;
 }
 
 async function generateCodeChallenge(codeVerifier) {
   const data = new TextEncoder().encode(codeVerifier);
-  const digest = await window.crypto.subtle.digest('SHA-256', data);
+  const digest = await window.crypto.subtle.digest("SHA-256", data);
   return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }

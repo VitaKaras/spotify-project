@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <title>Example</title>
+  <link rel="stylesheet" href="src/style.css">
   <script src="src/main.js" type="module"></script>
 </head>
-
 <body>
-  <h1>Display your Spotify Profile Data</h1>
+  <h1 id="start-header">Welcome To Spotify</h1>
+
+  <section id="header">
+    <h1 id="title">Spotify Profile Data</h1>
+
+    <button id="logout-btn">Log Out</button>
+  </section>
 
   <button id="login-btn">Login with Spotify</button>
 
@@ -17,15 +22,12 @@
     <img id="avatar" width="200" src="#" />
     <ul>
       <li>User ID: <span id="id"></span></li>
+      <li>Country: <span id="country"></span></li>
       <li>Email: <span id="email"></span></li>
       <li>Spotify URI: <a id="uri" href="#"></a></li>
-      <li>Link: <a id="url" href="#"></a></li>
     </ul>
   </section>
 
-
-  <button id="playlists-btn">My Playlists</button>
-
+  <button id="playlists-btn" onclick="window.location.href='src/playlists/playlists.html'">My Playlists</button>
 </body>
-
 </html>
