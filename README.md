@@ -1,5 +1,9 @@
 # SpotifyProject
 
+##!important
+
+You have to have your own Spotify account. You must send me your Gmail address to allow access to my app in development mode. 
+
 ## Development server
 
 Run `npm install` to install dependencies.
