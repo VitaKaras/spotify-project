@@ -1,6 +1,6 @@
 # SpotifyProject
 
-##!important
+## !important
 
 You have to have your own Spotify account. You must send me your Gmail address to allow access to my app in development mode. 
 
